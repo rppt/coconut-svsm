@@ -8,6 +8,9 @@ else
 TARGET_PATH="debug"
 endif
 
+ifdef V
+CARGO_ARGS += -vv
+endif
 
 STAGE2_ELF = "target/svsm-target/${TARGET_PATH}/stage2"
 KERNEL_ELF = "target/svsm-target/${TARGET_PATH}/svsm"
