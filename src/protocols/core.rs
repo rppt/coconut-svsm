@@ -20,6 +20,7 @@ use crate::sev::utils::{
 use crate::sev::vmsa::VMSA;
 use crate::types::{PAGE_SIZE, PAGE_SIZE_2M};
 use crate::utils::zero_mem_region;
+use crate::vtpm::init::handle_tpm2_crb_request;
 
 const SVSM_REQ_CORE_REMAP_CA: u32 = 0;
 const SVSM_REQ_CORE_PVALIDATE: u32 = 1;
@@ -29,6 +30,7 @@ const SVSM_REQ_CORE_DEPOSIT_MEM: u32 = 4;
 const SVSM_REQ_CORE_WITHDRAW_MEM: u32 = 5;
 const SVSM_REQ_CORE_QUERY_PROTOCOL: u32 = 6;
 const SVSM_REQ_CORE_CONFIGURE_VTOM: u32 = 7;
+const SVSM_REQ_CORE_VTPM_REQUEST: u32 = 8;
 
 const CORE_PROTOCOL: u32 = 1;
 const CORE_PROTOCOL_VERSION_MIN: u32 = 1;
@@ -196,6 +198,17 @@ fn core_configure_vtom(params: &mut RequestParams) -> Result<(), SvsmReqError> {
     }
 }
 
+fn core_vtpm_request(params: &mut RequestParams) -> Result<(), SvsmReqError> {
+    let addr: u32 = (params.r8 & 0xffff_ffff) as u32;
+    let val: u64 = params.r9;
+
+    handle_tpm2_crb_request(addr, val);
+
+    params.rcx = 0;
+
+    Ok(())
+}
+
 fn core_pvalidate_one(entry: u64, flush: &mut bool) -> Result<(), SvsmReqError> {
     let (page_size_bytes, valign, huge) = match entry & 3 {
         0 => (PAGE_SIZE, VIRT_ALIGN_4K, false),
@@ -354,6 +367,7 @@ pub fn core_protocol_request(request: u32, params: &mut RequestParams) -> Result
         SVSM_REQ_CORE_WITHDRAW_MEM => core_withdraw_mem(params),
         SVSM_REQ_CORE_QUERY_PROTOCOL => core_query_protocol(params),
         SVSM_REQ_CORE_CONFIGURE_VTOM => core_configure_vtom(params),
+	SVSM_REQ_CORE_VTPM_REQUEST => core_vtpm_request(params),
         _ => Err(SvsmReqError::unsupported_call()),
     }
 }

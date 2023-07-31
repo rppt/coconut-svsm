@@ -19,8 +19,11 @@ libvtpm.o: $(HEADERS) libvtpm.c
 
 bindings.rs: $(HEADERS) libvtpm.h
 	echo "#![allow(non_upper_case_globals)]" > $@
-	echo "#![allow(non_camel_case_types)]" > $@
-	echo "#![allow(non_snake_case)]" > $@
+	echo "#![allow(non_camel_case_types)]" >> $@
+	echo "#![allow(non_snake_case)]" >> $@
+	echo "#![allow(unused)]" >> $@
+	echo "#![allow(improper_ctypes)]" >> $@
+
 	bindgen $(BINDGEN_FLAGS) libvtpm.h -- $(CLANG_FLAGS) >> $@
 
 clean:
