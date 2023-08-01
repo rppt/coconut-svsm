@@ -7,7 +7,7 @@
  */
 
 pub mod init;
-// pub mod manufacture;
+pub mod manufacture;
 // pub mod report;
 
 mod bindings;

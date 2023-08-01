@@ -24,14 +24,14 @@ use core::fmt;
 //use crate::*;
 // use alloc::vec::Vec;
 // use bindings::*;
-// use cty::c_void;
+use cty::c_void;
 use core::slice;
 use lazy_static::lazy_static;
 // use x86_64::PhysAddrn;
-// use super::manufacture::{
-//     tpm2_create_ek_rsa2048,
-//     tpm2_get_ek_pub,
-// };
+use super::manufacture::{
+    tpm2_create_ek_rsa2048,
+    tpm2_get_ek_pub,
+};
 // use super::report::get_and_save_report;
 
 use tock_registers::{
@@ -260,7 +260,7 @@ pub fn send_tpm_command(request: &mut [u8]) -> TpmResponse {
     let mut _resp_vec: *mut u8 = __resp_vec.as_mut_ptr();
     unsafe {
         let resp_vec: *mut *mut u8 = &mut _resp_vec as *mut *mut u8;
-//        prints!("TPM Request: len={:#x} {:02x?}\n", {request.len()}, request);
+//        println!("TPM Request: len={:#x} {:02x?}", {request.len()}, request);
         ExecuteCommand(
             request.len() as u32,
             request.as_mut_ptr(),
@@ -269,7 +269,7 @@ pub fn send_tpm_command(request: &mut [u8]) -> TpmResponse {
         );
         __resp_vec.set_len(__resp_sz as usize);
     }
-//    prints!("TPM Response: len={:#x} {:02x?}\n", __resp_sz, {&__resp_vec});
+//    println!("TPM Response: len={:#x} {:02x?}", __resp_sz, {&__resp_vec});
     let tpm_resp: TpmResponse = TpmResponse {
         data: __resp_vec,
     };
@@ -284,65 +284,65 @@ pub fn vtpm_init() {
     }
 
     tpm_crb_init();
-    // unsafe {
-    //     _plat__NVEnable(core::ptr::null::<c_void>() as *mut c_void);
+    unsafe {
+        _plat__NVEnable(core::ptr::null::<c_void>() as *mut c_void);
 
-    //     if _plat__NVNeedsManufacture() == 1 {
-    //         if TPM_Manufacture(1) != 0 {
-    //             _plat__NVDisable(1);
-    //             println!("Manufacturing failed");
-    //         }
+        if _plat__NVNeedsManufacture() == 1 {
+            if TPM_Manufacture(1) != 0 {
+                _plat__NVDisable(1);
+                println!("Manufacturing failed");
+            }
 
-    //         // Coverage test - repeated manufacturing attempt
-    //         if TPM_Manufacture(0) != 1 {
-    //             println!("Manufacturing failed 1!");
-    //         }
+            // Coverage test - repeated manufacturing attempt
+            if TPM_Manufacture(0) != 1 {
+                println!("Manufacturing failed 1!");
+            }
 
-    //         // Coverage test - re-manufacturing
-    //         TPM_TearDown();
+            // Coverage test - re-manufacturing
+            TPM_TearDown();
 
-    //         if TPM_Manufacture(1) != 0 {
-    //             println!("Manufacturing failed 2!");
-    //         }
-    //     }
+            if TPM_Manufacture(1) != 0 {
+                println!("Manufacturing failed 2!");
+            }
+        }
 
-    //     _plat__SetNvAvail();
+        _plat__SetNvAvail();
 
-    //     rpc_signal_power_on(false);
-    // }
-    // // cmd1: TPM2_CC_SelfTest
-    // // cmd2: TPM2_CC_Startup
-    // let mut cmd1: &mut [u8] = &mut [
-    //     0x80, 0x01, 0x00, 0x00, 0x00, 0x0b, 0x00, 0x00, 0x01, 0x43, 0x00,
-    // ];
-    // let mut cmd2: &mut [u8] = &mut [
-    //     0x80, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x01, 0x44, 0x00, 0x00,
-    // ];
-    // send_tpm_command(&mut cmd1);
-    // send_tpm_command(&mut cmd2);
-    // //
-    // // Create EK pub in the TPM. The attestation report we save in the TPM has a hash of the EK
-    // // pub.
-    // //
-    // tpm2_create_ek_rsa2048();
-    // let ek_pub: Vec<u8> = tpm2_get_ek_pub();
-    // if ek_pub.is_empty() {
-    //     prints!("ERROR: Failed to read the EK pub from the TPM\n");
-    //     return;
-    // }
-    // let mut ek_pub_digest: [u8; WC_SHA512_DIGEST_SIZE as usize] =
-    //     [0; WC_SHA512_DIGEST_SIZE as usize];
-    // unsafe {
-    //     let ret: i32 = wc_Sha512Hash(
-    //         ek_pub.as_ptr(),
-    //         ek_pub.len().try_into().unwrap(),
-    //         ek_pub_digest.as_mut_ptr(),
-    //     );
-    //     if ret != 0 {
-    //         prints!("wc_Sha512_Hash failed, ret={}", ret);
-    //         return;
-    //     }
-    // }
+        rpc_signal_power_on(false);
+    }
+    // cmd1: TPM2_CC_SelfTest
+    // cmd2: TPM2_CC_Startup
+    let mut cmd1: &mut [u8] = &mut [
+        0x80, 0x01, 0x00, 0x00, 0x00, 0x0b, 0x00, 0x00, 0x01, 0x43, 0x00,
+    ];
+    let mut cmd2: &mut [u8] = &mut [
+        0x80, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x01, 0x44, 0x00, 0x00,
+    ];
+    send_tpm_command(&mut cmd1);
+    send_tpm_command(&mut cmd2);
+    //
+    // Create EK pub in the TPM. The attestation report we save in the TPM has a hash of the EK
+    // pub.
+    //
+    tpm2_create_ek_rsa2048();
+    let ek_pub: Vec<u8> = tpm2_get_ek_pub();
+    if ek_pub.is_empty() {
+        println!("ERROR: Failed to read the EK pub from the TPM");
+        return;
+    }
+    let mut ek_pub_digest: [u8; WC_SHA512_DIGEST_SIZE as usize] =
+        [0; WC_SHA512_DIGEST_SIZE as usize];
+    unsafe {
+        let ret: i32 = wc_Sha512Hash(
+            ek_pub.as_ptr(),
+            ek_pub.len().try_into().unwrap(),
+            ek_pub_digest.as_mut_ptr(),
+        );
+        if ret != 0 {
+            println!("wc_Sha512_Hash failed, ret={}", ret);
+            return;
+        }
+    }
     // get_and_save_report(&ek_pub_digest)
 }
 
