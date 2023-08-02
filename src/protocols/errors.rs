@@ -4,6 +4,8 @@
 //
 // Author: Joerg Roedel <jroedel@suse.de>
 
+use core::fmt;
+
 use crate::error::SvsmError;
 
 #[derive(Debug, Clone, Copy)]
@@ -19,6 +21,23 @@ pub enum SvsmResultCode {
     INVALID_REQUEST,
     BUSY,
     PROTOCOL_BASE(u64),
+}
+
+impl fmt::Display for SvsmResultCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::SUCCESS => write!(f, "SUCCESS"),
+            Self::INCOMPLETE => write!(f, "INCOMPLETE"),
+            Self::UNSUPPORTED_PROTOCOL => write!(f, "UNSUPPORTED_PROTOCOL"),
+            Self::UNSUPPORTED_CALL => write!(f, "UNSUPPORTED_CALL"),
+            Self::INVALID_ADDRESS => write!(f, "INVALID_ADDRESS"),
+            Self::INVALID_FORMAT => write!(f, "INVALID_FORMAT"),
+            Self::INVALID_PARAMETER => write!(f, "INVALID_PARAMETER"),
+            Self::INVALID_REQUEST => write!(f, "INVALID_REQUEST"),
+            Self::BUSY => write!(f, "BUSY"),
+            Self::PROTOCOL_BASE(n) => write!(f, "PROTOCOL_BASE({})", n),
+        }
+    }
 }
 
 impl From<SvsmResultCode> for u64 {
@@ -42,6 +61,17 @@ impl From<SvsmResultCode> for u64 {
 pub enum SvsmReqError {
     RequestError(SvsmResultCode),
     FatalError(SvsmError),
+}
+
+impl fmt::Display for SvsmReqError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::RequestError(e) => write!(f, "RequestError({})", e),
+            // Display is not implemented for all SvsmError. For now we print
+            // a static string without following up with its sub-types.
+            Self::FatalError(_) => write!(f, "FatalError(SvsmError)"),
+        }
+    }
 }
 
 macro_rules! impl_req_err {
