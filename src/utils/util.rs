@@ -86,3 +86,11 @@ macro_rules! getter_func {
         }
     };
 }
+
+/// Obtain bit for a given position
+#[macro_export]
+macro_rules! BIT {
+    ($x: expr) => {
+        (1 << ($x))
+    };
+}

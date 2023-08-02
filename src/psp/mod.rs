@@ -6,5 +6,7 @@
  *   Claudio Carvalho <cclaudio@linux.ibm.com>
  */
 
+/// SNP Guest Request driver
+pub mod guest_request_cmd;
 /// SNP GUEST Request message
 pub mod guest_request_msg;
