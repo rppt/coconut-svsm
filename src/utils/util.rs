@@ -59,3 +59,30 @@ pub fn zero_mem_region(start: VirtAddr, end: VirtAddr) {
     // Zero region
     unsafe { start.as_mut_ptr::<u8>().write_bytes(0, size) }
 }
+
+/// Generate set/get methods for a given struct field and type
+#[macro_export]
+macro_rules! funcs {
+    ($name: ident, $T: ty) => {
+        paste::paste! {
+            pub fn [<$name>](&self) -> $T {
+                self.$name
+            }
+            pub fn [<set_ $name>](&mut self, value: $T) {
+                self.$name = value;
+            }
+        }
+    };
+}
+
+/// Generate get method for a given struct field and type
+#[macro_export]
+macro_rules! getter_func {
+    ($name: ident, $T: ty) => {
+        paste::paste! {
+            pub fn [<$name>](&self) -> $T {
+                self.$name
+            }
+        }
+    };
+}

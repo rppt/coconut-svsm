@@ -23,6 +23,8 @@ gdbstub = { version = "0.6.6", default-features = false, optional = true }
 gdbstub_arch = { version = "0.2.4", optional = true }
 log = { version = "0.4.17", features = ["max_level_info", "release_max_level_info"] }
 packit = { git = "https://github.com/coconut-svsm/packit", version = "0.1.0" }
+paste = "1.0"
+aes-gcm = { version = "0.10.2", default-features = false, features = ["aes", "alloc"] }
 
 [build-dependencies]
 
