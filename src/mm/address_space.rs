@@ -87,7 +87,7 @@ pub const SIZE_LEVEL0: usize = 1usize << ((9 * 0) + 12);
 #[cfg(feature = "enable-gdb")]
 pub const STACK_PAGES: usize = 16;
 #[cfg(not(feature = "enable-gdb"))]
-pub const STACK_PAGES: usize = 4;
+pub const STACK_PAGES: usize = 12;
 
 pub const STACK_SIZE: usize = PAGE_SIZE * STACK_PAGES;
 pub const STACK_GUARD_SIZE: usize = STACK_SIZE;
