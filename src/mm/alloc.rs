@@ -15,6 +15,9 @@ use core::mem::size_of;
 use core::ptr;
 use log;
 
+use core::cmp::min;
+use core::ptr::copy_nonoverlapping;
+
 // Support allocations up to order-5 (128kb)
 pub const MAX_ORDER: usize = 6;
 
@@ -1288,6 +1291,56 @@ unsafe impl GlobalAlloc for SvsmAllocator {
                 panic!("Freeing memory on unsupported page type");
             }
         }
+    }
+
+    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8
+    {
+	let virt_addr = VirtAddr::from(ptr);
+        let size = layout.size();
+
+	// If ptr is null, then the call is equivalent to malloc(sz)
+	if ptr == 0 as *mut u8  {
+	    return self.alloc(layout);
+	};
+
+	// If ptr is not null and sz is zero, then the call is equivalent to free(ptr)
+	if size == 0 {
+            self.dealloc(ptr, layout);
+            return 0 as *mut u8;
+	}
+
+	let new_ptr: *mut u8 = self.alloc(layout);
+
+        let result = ROOT_MEM.lock().get_page_info(virt_addr);
+
+        if result.is_err() {
+            panic!("Freeing unknown memory");
+        }
+
+        let info = result.unwrap();
+
+        match info {
+            Page::Allocated(ai) => {
+		let size: usize = (1 << ai.order) << PAGE_SHIFT;
+		let size: usize = min(size, new_size);
+
+		copy_nonoverlapping(ptr as *const u8, new_ptr, size);
+                free_page(virt_addr);
+            }
+            Page::SlabPage(si) => {
+                assert!(!si.slab.is_null());
+                let slab = si.slab.as_mut_ptr::<Slab>();
+		let size: usize = (*slab).common.item_size.into();
+		let size: usize = min(size, new_size);
+
+		copy_nonoverlapping(ptr as *const u8, new_ptr, size);
+                (*slab).deallocate(virt_addr);
+            }
+            _ => {
+                panic!("Freeing memory on unsupported page type");
+            }
+        }
+	new_ptr
     }
 }
 
