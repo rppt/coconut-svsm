@@ -48,6 +48,7 @@ use svsm::svsm_console::SVSMIOPort;
 use svsm::svsm_paging::{init_page_table, invalidate_stage2};
 use svsm::types::{GUEST_VMPL, PAGE_SIZE};
 use svsm::utils::{halt, immut_after_init::ImmutAfterInitCell, zero_mem_region};
+use svsm::vtpm::vtpm_init;
 
 use core::ptr;
 use svsm::mm::validate::{init_valid_bitmap_ptr, migrate_valid_bitmap};
@@ -461,6 +462,8 @@ pub extern "C" fn svsm_main() {
     }
 
     snp_guest_request_init();
+
+    vtpm_init();
 
     prepare_fw_launch(&fw_meta).expect("Failed to setup guest VMSA");
 

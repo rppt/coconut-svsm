@@ -24,6 +24,15 @@ test:
 	cd src/
 	cargo test --target=x86_64-unknown-linux-gnu -Z build-std
 
+libvtpm/libvtpm.a:
+	make -C libvtpm
+
+src/vtpm/bindings.rs: libvtpm/bindings.rs
+	cp libvtpm/bindings.rs $@
+
+libvtpm/bindings.rs:
+	make -C libvtpm bindings.rs
+
 utils/gen_meta: utils/gen_meta.c
 	cc -O3 -Wall -o $@ $<
 
@@ -33,7 +42,7 @@ utils/print-meta: utils/print-meta.c
 stage1/meta.bin: utils/gen_meta utils/print-meta
 	./utils/gen_meta $@
 
-stage1/stage2.bin:
+stage1/stage2.bin: src/vtpm/bindings.rs libvtpm/libvtpm.a
 	cargo build ${CARGO_ARGS} --bin stage2
 	objcopy -O binary ${STAGE2_ELF} $@
 
@@ -61,5 +70,6 @@ svsm.bin: stage1/stage1
 clean:
 	cargo clean
 	rm -f stage1/stage2.bin svsm.bin stage1/meta.bin ${STAGE1_OBJS} gen_meta
+	$(MAKE) -C libvtpm clean
 
 .PHONY: stage1/stage2.bin stage1/kernel.elf svsm.bin clean stage1/svsm-fs.bin
