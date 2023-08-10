@@ -8,7 +8,7 @@ LIBTPM = libtpm.a
 LIBPLATFORM = libplatform.a
 LIBS = $(LIBCRT) $(LIBCRYPTO) $(LIBTPM) $(LIBPLATFORM)
 
-all: libvtpm.a
+all: libvtpm.a bindings.rs
 
 built-in.a: $(LIBS)
 	rm -f $@
@@ -56,6 +56,18 @@ $(LIBPLATFORM): $(PLATFORM_O)
 
 $(TPM_O) $(PLATFORM_O): .config
 $(TPM_O) $(PLATFORM_O): CFLAGS=$(LIBTPM_CFLAGS)
+
+# bindings.rs
+BINDGEN_FLAGS = --use-core --ctypes-prefix=cty
+CLANG_FLAGS = -Wno-incompatible-library-redeclaration
+
+bindings.rs: libvtpm.h
+	echo "#![allow(non_upper_case_globals)]" > $@
+	echo "#![allow(non_camel_case_types)]" >> $@
+	echo "#![allow(non_snake_case)]" >> $@
+	echo "#![allow(unused)]" >> $@
+	echo "#![allow(improper_ctypes)]" >> $@
+	bindgen $(BINDGEN_FLAGS) libvtpm.h -- $(CLANG_FLAGS) >> $@
 
 config: .config
 
@@ -121,6 +133,7 @@ clean:
 	make -C libcrt clean
 	make -C openssl clean
 	rm -f $(TPM_O) $(PLATFORM_O) $(LIBTPM) $(LIBPLATFORM)
+	rm -f bindings.rs
 
 distclean: clean
 	rm .config
