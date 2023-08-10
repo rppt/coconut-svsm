@@ -1,0 +1,4 @@
+[submodule "libvtpm/libcrt"]
+	path = libvtpm/libcrt
+	url = https://github.com/rppt/vtpm-libcrt.git
+	branch = coconut-svsm-vtpm
