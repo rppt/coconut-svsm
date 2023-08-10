@@ -2,3 +2,6 @@
 	path = libvtpm/libcrt
 	url = https://github.com/rppt/vtpm-libcrt.git
 	branch = coconut-svsm-vtpm
+[submodule "libvtpm/openssl"]
+	path = libvtpm/openssl
+	url = git://git.openssl.org/openssl.git
