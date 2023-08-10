@@ -1,9 +1,12 @@
 LIBCRT_DIR = $(CURDIR)/libcrt
 OPENSSL_DIR = $(CURDIR)/openssl
+LIBTPM_DIR = $(CURDIR)/ms-tpm-20-ref/TPMCmd
 
 LIBCRT = $(LIBCRT_DIR)/libcrt.a
 LIBCRYPTO = $(OPENSSL_DIR)/libcrypto.a
-LIBS = $(LIBCRT) $(LIBCRYPTO)
+LIBTPM = libtpm.a
+LIBPLATFORM = libplatform.a
+LIBS = $(LIBCRT) $(LIBCRYPTO) $(LIBTPM) $(LIBPLATFORM)
 
 all: libvtpm.a
 
@@ -24,6 +27,35 @@ $(LIBCRT):
 # openssl
 $(LIBCRYPTO): .config
 	$(MAKE) -C $(OPENSSL_DIR) RANLIB=echo ARFLAGS=cDPrST -j$$(nproc)
+
+# TPM
+$(LIBTPM_DIR)/src.mk:
+	(cd $(LIBTPM_DIR) && ./bootstrap)
+
+-include $(LIBTPM_DIR)/src.mk
+
+TPM_O = $(addprefix $(CURDIR)/ms-tpm-20-ref/TPMCmd/, $(TPM_C:%.c=%.o))
+PLATFORM_O = $(addprefix $(CURDIR)/ms-tpm-20-ref/TPMCmd/, $(PLATFORM_C:%.c=%.o))
+
+LIBTPM_INCLUDES = -I$(LIBTPM_DIR)/tpm/include
+LIBTPM_INCLUDES += -I$(LIBTPM_DIR)/tpm/include/prototypes
+LIBTPM_INCLUDES += -I$(LIBTPM_DIR)/Platform/include
+LIBTPM_INCLUDES += -I$(LIBTPM_DIR)/Platform/include/prototypes
+LIBTPM_INCLUDES += -I$(LIBCRT_DIR)/include -I$(OPENSSL_DIR)/include
+LIBTPM_DEFINES = -DSIMULATION=NO  -DVTPM -DEPHEMERAL_NV
+LIBTPM_CFLAGS = -fPIE -fno-stack-protector -nostdlib -nostdinc
+LIBTPM_CFLAGS += $(LIBTPM_DEFINES) $(LIBTPM_INCLUDES)
+
+$(LIBTPM): $(TPM_O)
+	rm -f $@
+	ar cDPrST $@ $(TPM_O)
+
+$(LIBPLATFORM): $(PLATFORM_O)
+	rm -f $@
+	ar cDPrST $@ $(PLATFORM_O)
+
+$(TPM_O) $(PLATFORM_O): .config
+$(TPM_O) $(PLATFORM_O): CFLAGS=$(LIBTPM_CFLAGS)
 
 config: .config
 
@@ -88,6 +120,7 @@ clean:
 	rm -f *.o *.a
 	make -C libcrt clean
 	make -C openssl clean
+	rm -f $(TPM_O) $(PLATFORM_O) $(LIBTPM) $(LIBPLATFORM)
 
 distclean: clean
 	rm .config
